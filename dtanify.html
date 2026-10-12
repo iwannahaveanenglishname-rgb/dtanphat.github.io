@@ -1,0 +1,1731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English AI - Learn & Practice American English</title>
+    
+    <!-- Scripts -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    animation: {
+                        'fade-in': 'fadeIn 0.3s ease-out forwards',
+                        'bounce-short': 'bounce 0.5s ease-in-out 1',
+                        'spin-slow': 'spin 3s linear infinite',
+                        'slide-up': 'slideUp 0.3s ease-out forwards',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        slideUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .perspective-1000 { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .backface-hidden { backface-visibility: hidden; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans antialiased selection:bg-amber-500 selection:text-slate-950">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useCallback } = React;
+
+        const LOCAL_STORAGE_KEY = 'english_ai_local_data_v1';
+        const OLD_LOCAL_STORAGE_KEY = 'deutsch_ai_local_data_v3';
+        const API_KEY_STORAGE_KEY = 'english_ai_user_api_key';
+        const OLD_API_KEY_STORAGE_KEY = 'deutsch_ai_user_api_key';
+        const FLASHCARD_DIRECTION_KEY = 'english_ai_flashcard_direction_v1';
+        const VIEW_STATE_STORAGE_KEY = 'english_ai_view_state_v1';
+
+        const defaultSampleData = {
+            folders: [{ id: 'folder_demo_1', name: 'A1-A2 Level - General American English', description: 'Essential everyday vocabulary and phrases', createdAt: new Date().toISOString().split('T')[0], inTrash: false }],
+            sets: [{ id: 'set_demo_1', folderId: 'folder_demo_1', title: 'Lesson 1: Food, Dining & Daily Life', description: 'Common vocabulary for ordering food and daily activities', createdAt: new Date().toISOString().split('T')[0], inTrash: false }],
+            cards: [
+                { id: 'card_demo_1', setId: 'set_demo_1', article: 'noun', partOfSpeech: 'noun', ipa: '/ˈres.tə.rɑːnt/', german: 'restaurant', english: 'restaurant', word: 'restaurant', plural: '/ˈres.tə.rɑːnt/', vietnamese: 'nhà hàng', meaning: 'nhà hàng', example: 'We had dinner at a small restaurant near the hotel.', exampleTranslation: 'Chúng tôi đã ăn tối tại một nhà hàng nhỏ gần khách sạn.', imageUrl: '', createdAt: new Date().toISOString().split('T')[0], isLearned: false, inTrash: false },
+                { id: 'card_demo_2', setId: 'set_demo_1', article: 'noun', partOfSpeech: 'noun', ipa: '/ˌrez.ɚˈveɪ.ʃən/', german: 'reservation', english: 'reservation', word: 'reservation', plural: '/ˌrez.ɚˈveɪ.ʃən/', vietnamese: 'sự đặt chỗ / đặt bàn', meaning: 'sự đặt chỗ / đặt bàn', example: 'I would like to make a reservation for two people tonight.', exampleTranslation: 'Tôi muốn đặt bàn cho hai người tối nay.', imageUrl: '', createdAt: new Date().toISOString().split('T')[0], isLearned: false, inTrash: false },
+                { id: 'card_demo_3', setId: 'set_demo_1', article: 'adjective', partOfSpeech: 'adjective', ipa: '/ˈkraʊ.dɪd/', german: 'crowded', english: 'crowded', word: 'crowded', plural: '', vietnamese: 'đông đúc', meaning: 'đông đúc', example: 'The coffee shop was very crowded during lunch hour.', exampleTranslation: 'Quán cà phê rất đông đúc vào giờ ăn trưa.', imageUrl: '', createdAt: new Date().toISOString().split('T')[0], isLearned: false, inTrash: false },
+                { id: 'card_demo_4', setId: 'set_demo_1', article: 'adjective', partOfSpeech: 'adjective', ipa: '/dɪˈlɪʃ.əs/', german: 'delicious', english: 'delicious', word: 'delicious', plural: '', vietnamese: 'thơm ngon', meaning: 'thơm ngon', example: 'The food at this place is absolutely delicious.', exampleTranslation: 'Thức ăn ở chỗ này cực kỳ ngon.', imageUrl: '', createdAt: new Date().toISOString().split('T')[0], isLearned: false, inTrash: false },
+                { id: 'card_demo_5', setId: 'set_demo_1', article: 'noun', partOfSpeech: 'noun', ipa: '/ɪnˈvaɪ.rən.mənt/', german: 'environment', english: 'environment', word: 'environment', plural: '/ɪnˈvaɪ.rən.mənt/', vietnamese: 'môi trường', meaning: 'môi trường', example: 'We should all work together to protect the environment.', exampleTranslation: 'Tất cả chúng ta nên cùng nhau bảo vệ môi trường.', imageUrl: '', createdAt: new Date().toISOString().split('T')[0], isLearned: false, inTrash: false },
+                { id: 'card_demo_6', setId: 'set_demo_1', article: 'noun', partOfSpeech: 'noun', ipa: '/əˈpɑːrt.mənt/', german: 'apartment', english: 'apartment', word: 'apartment', plural: '/əˈpɑːrt.mənt/', vietnamese: 'căn hộ', meaning: 'căn hộ', example: 'They just moved into a new apartment downtown.', exampleTranslation: 'Họ vừa chuyển đến một căn hộ mới ở trung tâm thành phố.', imageUrl: '', createdAt: new Date().toISOString().split('T')[0], isLearned: false, inTrash: false }
+            ]
+        };
+
+        // FISHER-YATES SHUFFLE
+        function fisherYatesShuffle(array) {
+            if (!Array.isArray(array)) return [];
+            let arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        const getTodayString = () => new Date().toISOString().split('T')[0];
+        const getCardWord = (card) => { if (!card) return ''; return (card.english || card.word || card.german || '').trim(); };
+        const getCardMeaning = (card) => { if (!card) return ''; return (card.vietnamese || card.meaning || card.german || '').trim(); };
+
+        const getPosAbbreviation = (pos) => {
+            if (!pos) return '';
+            const cleanPos = pos.trim().toLowerCase();
+            const posMap = {
+                'noun': 'n.',
+                'verb': 'v.',
+                'adjective': 'adj.',
+                'adverb': 'adv.',
+                'preposition': 'prep.',
+                'conjunction': 'conj.',
+                'pronoun': 'pron.',
+                'interjection': 'interj.',
+                'phrase': 'phr.',
+                'phrasal verb': 'phr. v.'
+            };
+            return posMap[cleanPos] || (cleanPos.endsWith('.') ? cleanPos : cleanPos);
+        };
+
+        // AMERICAN ENGLISH TTS SYSTEM
+        const getAmericanEnglishVoice = () => {
+            if (!window.speechSynthesis) return null;
+            const voices = window.speechSynthesis.getVoices();
+            if (!voices || voices.length === 0) return null;
+
+            const usVoices = voices.filter(v => {
+                const lang = (v.lang || '').replace('_', '-').toLowerCase();
+                return lang === 'en-us';
+            });
+
+            if (usVoices.length > 0) {
+                const priorityKeywords = [
+                    'natural', 'google us english', 'google', 'online', 'premium',
+                    'samantha', 'alex', 'jenny', 'guy', 'aria', 'christopher', 'zira', 'david', 'ava', 'allison'
+                ];
+                for (const kw of priorityKeywords) {
+                    const found = usVoices.find(v => v.name.toLowerCase().includes(kw));
+                    if (found) return found;
+                }
+                return usVoices.find(v => !v.localService) || usVoices[0];
+            }
+
+            const otherEnglishVoices = voices.filter(v => (v.lang || '').toLowerCase().startsWith('en'));
+            if (otherEnglishVoices.length > 0) {
+                const nonUsLocales = ['en-gb', 'en-au', 'en-in', 'en-ie', 'en-za', 'en-nz', 'en-ca'];
+                const nonGbFiltered = otherEnglishVoices.filter(v => {
+                    const lang = (v.lang || '').replace('_', '-').toLowerCase();
+                    return !nonUsLocales.includes(lang);
+                });
+                if (nonGbFiltered.length > 0) return nonGbFiltered[0];
+                return otherEnglishVoices[0];
+            }
+            return null;
+        };
+
+        if (typeof window !== 'undefined' && window.speechSynthesis) {
+            window.speechSynthesis.onvoiceschanged = () => { getAmericanEnglishVoice(); };
+        }
+
+        const playAudio = (text) => {
+            if (!text || !window.speechSynthesis) return;
+            try {
+                window.speechSynthesis.cancel(); 
+                const u = new SpeechSynthesisUtterance(text);
+                u.lang = 'en-US';
+                u.rate = 0.95;
+                const americanVoice = getAmericanEnglishVoice();
+                if (americanVoice) u.voice = americanVoice;
+                window.speechSynthesis.speak(u);
+            } catch (err) {
+                console.error('TTS playback error:', err);
+            }
+        };
+
+        function useLongPress(onLongPress, onClick, { delay = 600 } = {}) {
+            const timerRef = useRef(null);
+            const isLongPressRef = useRef(false);
+
+            const start = useCallback((e) => {
+                if (e.type === 'mousedown' && e.button !== 0) return;
+                isLongPressRef.current = false;
+                timerRef.current = setTimeout(() => {
+                    isLongPressRef.current = true;
+                    if (window.navigator && window.navigator.vibrate) try { window.navigator.vibrate(50); } catch (err) {}
+                    onLongPress(e);
+                }, delay);
+            }, [onLongPress, delay]);
+
+            const stop = useCallback(() => {
+                if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
+            }, []);
+
+            const handleClick = useCallback((e) => {
+                if (isLongPressRef.current) { e.stopPropagation(); e.preventDefault(); isLongPressRef.current = false; return; }
+                if (onClick) onClick(e);
+            }, [onClick]);
+
+            return { onMouseDown: start, onMouseUp: stop, onMouseLeave: stop, onTouchStart: start, onTouchEnd: stop, onTouchMove: stop, onClick: handleClick };
+        }
+
+        const callGeminiAPI = async (prompt, systemInstruction = "", responseSchema = null, customApiKey = "") => {
+            const apiKey = (customApiKey || '').trim();
+            if (!apiKey) throw new Error("Gemini API key is missing. Please set your API key in Settings.");
+            
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+            const payload = { contents: [{ parts: [{ text: prompt }] }] };
+            if (systemInstruction) payload.systemInstruction = { parts: [{ text: systemInstruction }] };
+            if (responseSchema) payload.generationConfig = { responseMimeType: "application/json", responseSchema: responseSchema };
+            
+            try {
+                const res = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                if (!res.ok) {
+                    let errorMsg = `HTTP Error ${res.status}`;
+                    try {
+                        const errData = await res.json();
+                        if (errData?.error?.message) errorMsg = errData.error.message;
+                    } catch (e) {
+                        try { errorMsg = await res.text(); } catch (tErr) { errorMsg = `Status ${res.status}`; }
+                    }
+                    throw new Error(`API Error [${res.status}]: ${errorMsg}`);
+                }
+                const data = await res.json();
+                const candidate = data.candidates && data.candidates[0];
+                const parts = candidate && candidate.content && candidate.content.parts;
+                if (!parts || parts.length === 0) throw new Error("Invalid response format received from Gemini AI.");
+                const textPart = parts.find(p => p.text && !p.thought) || parts.find(p => p.text) || parts[0];
+                if (!textPart || typeof textPart.text !== 'string') throw new Error("No text content found in AI API response.");
+                return textPart.text;
+            } catch (err) {
+                if (err.message && (err.message.includes('Failed to fetch') || err.message.includes('NetworkError'))) {
+                    throw new Error("Network Error: Unable to connect to Gemini AI API.");
+                }
+                throw err;
+            }
+        };
+
+        const Icons = {
+            Folder: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>,
+            Book: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>,
+            Card: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>,
+            Plus: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg>,
+            Trash: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>,
+            Sparkles: () => <svg className="w-5 h-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 18.6 8.378a1 1 0 01.55 1.706l-3.35 3.063.929 4.526a1 1 0 01-1.481 1.076L11 16.32l-3.244 2.43a1 1 0 01-1.48-1.077l.928-4.525-3.35-3.064a1 1 0 01.55-1.706l4.455-1.177 1.179-4.456A1 1 0 0112 2z" clipRule="evenodd"/></svg>,
+            Speaker: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>,
+            Check: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg>,
+            Cross: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>,
+            Home: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>,
+            Edit: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>,
+            Menu: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"/></svg>,
+            ChevronRight: () => <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/></svg>,
+            Study: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+            Quiz: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+            Upload: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>,
+            ArrowLeft: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>,
+            ArrowRight: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>,
+            Undo: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg>,
+            Trophy: () => <svg className="w-8 h-8 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2 0h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>,
+            Key: () => <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>,
+            Download: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>,
+            Refresh: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
+            Writing: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>,
+            Target: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0-6C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+        };
+
+        const SidebarFolderItem = ({ folder, countSets, isSelected, onSelect, onLongPressDelete }) => {
+            const pressHandlers = useLongPress(onLongPressDelete, onSelect);
+            return (
+                <div {...pressHandlers} className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer transition-all mb-1 select-none ${isSelected ? 'bg-amber-500 text-slate-950 font-bold shadow-md' : 'text-slate-300 hover:bg-slate-800'}`}>
+                    <div className="flex items-center gap-2 truncate"><Icons.Folder /><span className="truncate text-sm">{folder.name}</span></div>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${isSelected ? 'bg-slate-950/20 text-slate-900' : 'bg-slate-800 text-slate-400'}`}>{countSets}</span>
+                </div>
+            );
+        };
+
+        const FolderGridCard = ({ folder, folderSetsCount, onSelect, onEdit, onLongPressDelete }) => {
+            const pressHandlers = useLongPress(onLongPressDelete, onSelect);
+            return (
+                <div {...pressHandlers} className="group relative bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-2xl p-5 cursor-pointer transition-all transform hover:-translate-y-1 hover:shadow-xl hover:border-amber-500/30 overflow-hidden">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-amber-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div className="flex justify-between items-start mb-3">
+                        <div className="p-3 bg-amber-500/10 text-amber-400 rounded-xl"><Icons.Folder /></div>
+                        <button onClick={onEdit} className="p-2 text-slate-400 hover:text-white hover:bg-slate-600 rounded-lg transition-colors"><Icons.Edit /></button>
+                    </div>
+                    <h4 className="font-bold text-lg text-white mb-1 truncate">{folder.name}</h4>
+                    <p className="text-sm text-slate-400 line-clamp-2 mb-3 min-h-[40px]">{folder.description || 'No description'}</p>
+                    <div className="flex items-center text-xs text-slate-500 font-medium bg-slate-900/50 inline-block px-3 py-1.5 rounded-lg">{folderSetsCount} Sets</div>
+                </div>
+            );
+        };
+
+        const SetGridCard = ({ setItem, cardsCount, onSelect, onEdit, onLongPressDelete }) => {
+            const pressHandlers = useLongPress(onLongPressDelete, onSelect);
+            return (
+                <div {...pressHandlers} className="group bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-2xl p-5 cursor-pointer transition-all transform hover:-translate-y-1 hover:shadow-xl overflow-hidden flex flex-col">
+                    <div className="flex justify-between items-start mb-2">
+                        <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold uppercase tracking-wider mb-2"><Icons.Book /> Study Set / Unit</div>
+                        <button onClick={onEdit} className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-600 rounded-lg transition-colors"><Icons.Edit /></button>
+                    </div>
+                    <h4 className="font-bold text-lg text-white mb-1 line-clamp-2 flex-1">{setItem.title}</h4>
+                    {setItem.description && <p className="text-sm text-slate-400 line-clamp-1 mb-4">{setItem.description}</p>}
+                    <div className="flex items-center justify-between mt-auto pt-3 border-t border-slate-700">
+                        <span className="text-xs text-slate-400 font-medium bg-slate-900 px-2.5 py-1 rounded-md">{cardsCount} Cards</span>
+                        <span className="text-xs text-slate-500">{setItem.createdAt}</span>
+                    </div>
+                </div>
+            );
+        };
+
+        const FlashcardListItem = ({ card, onEdit, onToggleLearned, onLongPressDelete }) => {
+            const pressHandlers = useLongPress(onLongPressDelete, onEdit);
+            const word = getCardWord(card);
+            const partOfSpeech = card.partOfSpeech || card.article || '';
+            const posAbbr = getPosAbbreviation(partOfSpeech);
+            const ipa = card.ipa || (card.plural && card.plural.startsWith('/') ? card.plural : '');
+            const vietnamese = getCardMeaning(card);
+
+            return (
+                <div {...pressHandlers} className={`group flex flex-col p-4 rounded-xl border transition-all cursor-pointer ${card.isLearned ? 'bg-slate-900/50 border-slate-800 opacity-60' : 'bg-slate-800 hover:bg-slate-700 border-slate-700 hover:border-slate-500'}`}>
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4 flex-1 overflow-hidden">
+                            <button onClick={(e) => { e.stopPropagation(); onToggleLearned(card); }} className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${card.isLearned ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-500 text-transparent hover:border-emerald-500'}`}><Icons.Check /></button>
+                            <div className="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4">
+                                <div className="truncate">
+                                    <span className="font-bold text-lg text-white truncate">{word}</span>
+                                    {posAbbr && <span className="text-xs text-amber-400 font-mono ml-2 font-medium">({posAbbr})</span>}
+                                    {ipa && <span className="text-xs text-slate-400 font-mono ml-2">{ipa}</span>}
+                                    {card.example && <p className="text-xs text-slate-300 truncate mt-0.5 italic">"{card.example}"</p>}
+                                </div>
+                                <div className="truncate flex items-center text-slate-300"><span className="truncate font-semibold text-emerald-400">{vietnamese}</span></div>
+                            </div>
+                        </div>
+                        <div className="flex items-center ml-4 gap-1">
+                            <button onClick={(e) => { e.stopPropagation(); onEdit(e); }} className="p-2 text-slate-400 hover:text-white rounded-lg"><Icons.Edit /></button>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-700/50">
+                        <button onClick={(e) => { e.stopPropagation(); playAudio(word); }} className="flex items-center gap-1 text-xs px-2.5 py-1 bg-slate-900 rounded-md text-amber-400 hover:bg-amber-500/20 transition-colors"><Icons.Speaker /> English</button>
+                        {card.example && <button onClick={(e) => { e.stopPropagation(); playAudio(card.example); }} className="flex items-center gap-1 text-xs px-2.5 py-1 bg-slate-900 rounded-md text-slate-400 hover:text-white transition-colors"><Icons.Speaker /> Example Sentence</button>}
+                    </div>
+                </div>
+            );
+        };
+
+        function App() {
+            const [folders, setFolders] = useState([]);
+            const [sets, setSets] = useState([]);
+            const [cards, setCards] = useState([]);
+            const [userApiKey, setUserApiKey] = useState('');
+            const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
+            const [currentView, setCurrentView] = useState('dashboard');
+            const [activeFolderId, setActiveFolderId] = useState(null);
+            const [activeSetId, setActiveSetId] = useState(null);
+            const [sidebarOpen, setSidebarOpen] = useState(false);
+            
+            // Flashcard Language Direction state
+            const [flashcardDirection, setFlashcardDirection] = useState(() => {
+                return localStorage.getItem(FLASHCARD_DIRECTION_KEY) || 'de-en';
+            });
+
+            const toggleFlashcardDirection = () => {
+                const nextDir = flashcardDirection === 'de-en' ? 'en-de' : 'de-en';
+                setFlashcardDirection(nextDir);
+                localStorage.setItem(FLASHCARD_DIRECTION_KEY, nextDir);
+            };
+
+            const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
+            const [editingFolder, setEditingFolder] = useState(null);
+            const [folderForm, setFolderForm] = useState({ name: '', description: '' });
+            
+            const [isSetModalOpen, setIsSetModalOpen] = useState(false);
+            const [editingSet, setEditingSet] = useState(null);
+            const [setForm, setSetForm] = useState({ title: '', description: '', folderId: '' });
+            
+            const [isCardModalOpen, setIsCardModalOpen] = useState(false);
+            const [editingCard, setEditingCard] = useState(null);
+            const [cardForm, setCardForm] = useState({ english: '', vietnamese: '', example: '', exampleTranslation: '', imageUrl: '', plural: '', partOfSpeech: 'noun', ipa: '' });
+            
+            // Quick AI Import States
+            const [isAiImportModalOpen, setIsAiImportModalOpen] = useState(false);
+            const [importRawText, setImportRawText] = useState('');
+            const [customPromptNote, setCustomPromptNote] = useState('');
+            const [isAiImporting, setIsAiImporting] = useState(false);
+            const [targetImportSetId, setTargetImportSetId] = useState('');
+            const [aiPreviewCards, setAiPreviewCards] = useState([]);
+            const [aiImportError, setAiImportError] = useState(null);
+
+            const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, message: '', onConfirm: null });
+            const [toastMessage, setToastMessage] = useState(null);
+            const [studySession, setStudySession] = useState({ cards: [], currentIndex: 0, isFlipped: false, showResult: false });
+            
+            // UNIT EXERCISE SYSTEM STATES
+            const [isUnitExerciseModalOpen, setIsUnitExerciseModalOpen] = useState(false);
+            const [exerciseConfig, setExerciseConfig] = useState({
+                exerciseType: 'all', // 'meaning_to_word', 'complete_sentence', 'make_sentence', 'all'
+                answerFormat: 'written', // 'multiple_choice', 'written', 'mixed'
+                questionCount: 10
+            });
+
+            const [unitQuizState, setUnitQuizState] = useState({
+                questions: [],
+                currentIndex: 0,
+                userAnswers: {},
+                aiEvaluations: {}, // qId -> { correct, score, userAnswer, correctAnswer, correction, explanation, feedback }
+                isSubmitted: false,
+                isLoadingAI: false,
+                isEvaluating: false,
+                overallFeedback: null
+            });
+
+            const [writtenAnswerInput, setWrittenAnswerInput] = useState('');
+            const writtenInputRef = useRef(null);
+            const fileInputRef = useRef(null);
+
+            useEffect(() => {
+                loadLocalData();
+                const key = localStorage.getItem(API_KEY_STORAGE_KEY) || localStorage.getItem(OLD_API_KEY_STORAGE_KEY);
+                if (key) setUserApiKey(key);
+            }, []);
+
+            useEffect(() => { localStorage.setItem(VIEW_STATE_STORAGE_KEY, currentView); }, [currentView]);
+
+            useEffect(() => {
+                if (currentView === 'unit_quiz_play' && writtenInputRef.current) {
+                    const timer = setTimeout(() => { if (writtenInputRef.current) writtenInputRef.current.focus(); }, 100);
+                    return () => clearTimeout(timer);
+                }
+            }, [currentView, unitQuizState.currentIndex, unitQuizState.isEvaluating]);
+
+            const showToast = (msg) => { setToastMessage(msg); setTimeout(() => setToastMessage(null), 3500); };
+
+            const loadLocalData = () => {
+                try {
+                    let saved = localStorage.getItem(LOCAL_STORAGE_KEY) || localStorage.getItem(OLD_LOCAL_STORAGE_KEY);
+                    if (saved) {
+                        const parsed = JSON.parse(saved);
+                        const loadedCards = (parsed.cards || []).map(c => ({ ...c, english: getCardWord(c) }));
+                        setFolders(parsed.folders || defaultSampleData.folders);
+                        setSets(parsed.sets || defaultSampleData.sets);
+                        setCards(loadedCards.length > 0 ? loadedCards : defaultSampleData.cards);
+                    } else {
+                        setFolders(defaultSampleData.folders); setSets(defaultSampleData.sets); setCards(defaultSampleData.cards);
+                        saveToLocalStorage(defaultSampleData.folders, defaultSampleData.sets, defaultSampleData.cards);
+                    }
+                    const savedView = localStorage.getItem(VIEW_STATE_STORAGE_KEY);
+                    if (savedView && savedView !== 'exercise_hub' && savedView !== 'quiz_play') setCurrentView(savedView);
+                } catch (e) { setFolders(defaultSampleData.folders); setSets(defaultSampleData.sets); setCards(defaultSampleData.cards); }
+            };
+
+            const saveToLocalStorage = (newFolders, newSets, newCards) => localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({ folders: newFolders, sets: newSets, cards: newCards }));
+
+            const saveApiKey = (keyStr) => { setUserApiKey(keyStr); localStorage.setItem(API_KEY_STORAGE_KEY, keyStr); showToast("Gemini API Key saved!"); setIsApiKeyModalOpen(false); };
+
+            const exportDataJSON = () => {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ folders, sets, cards, exportDate: new Date().toISOString() }, null, 2));
+                const downloadAnchor = document.createElement('a'); downloadAnchor.setAttribute("href", dataStr); downloadAnchor.setAttribute("download", `English_AI_Backup_${getTodayString()}.json`);
+                document.body.appendChild(downloadAnchor); downloadAnchor.click(); downloadAnchor.remove(); showToast("Backup downloaded successfully!");
+            };
+
+            const handleImportJSON = (e) => {
+                const file = e.target.files[0]; if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const imported = JSON.parse(event.target.result);
+                        if (imported.folders && imported.sets && imported.cards) {
+                            const formattedCards = imported.cards.map(c => ({ ...c, english: getCardWord(c) }));
+                            setFolders(imported.folders); setSets(imported.sets); setCards(formattedCards); saveToLocalStorage(imported.folders, imported.sets, formattedCards); showToast("Data imported successfully!");
+                        } else alert("Invalid JSON backup structure!");
+                    } catch (err) { alert("Cannot read this JSON file!"); }
+                };
+                reader.readAsText(file);
+            };
+
+            const handleSaveFolder = async (e) => {
+                if (e) e.preventDefault(); if (!folderForm.name.trim()) return;
+                const folderId = editingFolder ? editingFolder.id : 'folder_' + Date.now();
+                const data = { id: folderId, name: folderForm.name.trim(), description: folderForm.description.trim(), createdAt: editingFolder ? editingFolder.createdAt : getTodayString(), inTrash: editingFolder ? editingFolder.inTrash : false };
+                const updated = editingFolder ? folders.map(f => f.id === folderId ? data : f) : [...folders, data];
+                setFolders(updated); saveToLocalStorage(updated, sets, cards); showToast(editingFolder ? "Folder updated!" : "New folder created!"); setIsFolderModalOpen(false);
+                if (!editingFolder) { setActiveFolderId(folderId); setCurrentView('folder'); }
+            };
+
+            const handleSoftDeleteFolder = (folderId) => {
+                const updated = folders.map(f => f.id === folderId ? { ...f, inTrash: true } : f); setFolders(updated); saveToLocalStorage(updated, sets, cards); showToast("Folder moved to trash!");
+                if (activeFolderId === folderId) { setCurrentView('dashboard'); setActiveFolderId(null); } setConfirmDialog({ isOpen: false, message: '', onConfirm: null });
+            };
+            const handleLongPressDeleteFolder = (folder) => setConfirmDialog({ isOpen: true, message: `Move folder "${folder.name}" to trash?`, onConfirm: () => handleSoftDeleteFolder(folder.id) });
+
+            const handleSaveSet = async (e) => {
+                if(e) e.preventDefault(); if (!setForm.title.trim()) return;
+                const targetFolderId = setForm.folderId || activeFolderId || ''; const setId = editingSet ? editingSet.id : 'set_' + Date.now();
+                const data = { id: setId, title: setForm.title.trim(), description: setForm.description.trim(), folderId: targetFolderId, createdAt: editingSet ? editingSet.createdAt : getTodayString(), inTrash: editingSet ? editingSet.inTrash : false };
+                const updated = editingSet ? sets.map(s => s.id === setId ? data : s) : [...sets, data];
+                setSets(updated); saveToLocalStorage(folders, updated, cards); showToast(editingSet ? "Set updated!" : "New set created!"); setIsSetModalOpen(false);
+                if (!editingSet) { setActiveSetId(setId); setCurrentView('set'); }
+            };
+
+            const handleSoftDeleteSet = (setId) => {
+                const updated = sets.map(s => s.id === setId ? { ...s, inTrash: true } : s); setSets(updated); saveToLocalStorage(folders, updated, cards); showToast("Set moved to trash!");
+                if (activeSetId === setId) { setCurrentView(activeFolderId ? 'folder' : 'dashboard'); setActiveSetId(null); } setConfirmDialog({ isOpen: false, message: '', onConfirm: null });
+            };
+            const handleLongPressDeleteSet = (setItem) => setConfirmDialog({ isOpen: true, message: `Move set "${setItem.title}" to trash?`, onConfirm: () => handleSoftDeleteSet(setItem.id) });
+
+            const handleSaveCard = async (e) => {
+                if(e) e.preventDefault(); const word = cardForm.english.trim(); const meaning = cardForm.vietnamese.trim(); if (!word || !meaning) return; if (!activeSetId) return;
+                const cardId = editingCard ? editingCard.id : 'card_' + Date.now();
+                const data = {
+                    id: cardId,
+                    setId: activeSetId,
+                    english: word,
+                    word: word,
+                    german: word,
+                    article: cardForm.partOfSpeech || 'noun',
+                    partOfSpeech: cardForm.partOfSpeech || 'noun',
+                    ipa: cardForm.ipa || cardForm.plural || '',
+                    plural: cardForm.ipa || cardForm.plural || '',
+                    vietnamese: meaning,
+                    meaning: meaning,
+                    example: cardForm.example.trim(),
+                    exampleTranslation: cardForm.exampleTranslation?.trim() || '',
+                    imageUrl: cardForm.imageUrl.trim(),
+                    createdAt: editingCard ? editingCard.createdAt : getTodayString(),
+                    isLearned: editingCard ? editingCard.isLearned : false,
+                    inTrash: editingCard ? editingCard.inTrash : false
+                };
+                const updated = editingCard ? cards.map(c => c.id === cardId ? data : c) : [...cards, data];
+                setCards(updated); saveToLocalStorage(folders, sets, updated); showToast(editingCard ? "Card updated!" : "New card created!"); setIsCardModalOpen(false);
+            };
+
+            const handleSoftDeleteCard = (cardId) => {
+                const updated = cards.map(c => c.id === cardId ? { ...c, inTrash: true } : c); setCards(updated); saveToLocalStorage(folders, sets, updated); showToast("Card moved to trash!"); setConfirmDialog({ isOpen: false, message: '', onConfirm: null });
+            };
+            const handleLongPressDeleteCard = (card) => setConfirmDialog({ isOpen: true, message: `Delete card "${getCardWord(card)}"?`, onConfirm: () => handleSoftDeleteCard(card.id) });
+            const toggleCardLearned = (card) => {
+                const updated = cards.map(c => c.id === card.id ? { ...c, isLearned: !card.isLearned } : c); setCards(updated); saveToLocalStorage(folders, sets, updated);
+            };
+
+            // QUICK AI IMPORT FEATURE
+            const openQuickAiImportModal = (defaultSetId = null) => {
+                const targetId = defaultSetId || activeSetId || (activeSets.length > 0 ? activeSets[0].id : '');
+                setTargetImportSetId(targetId);
+                setImportRawText('');
+                setCustomPromptNote('');
+                setAiPreviewCards([]);
+                setAiImportError(null);
+                setIsAiImportModalOpen(true);
+            };
+
+            const handleRunAiImport = async () => {
+                if (!userApiKey) {
+                    showToast("Vui lòng nhập Gemini API Key để dùng AI Import!");
+                    setIsApiKeyModalOpen(true);
+                    return;
+                }
+
+                const cleanWords = Array.from(new Set(
+                    importRawText
+                        .split(/[\n,]+/)
+                        .map(w => w.trim())
+                        .filter(w => w.length > 0)
+                ));
+
+                if (cleanWords.length === 0) {
+                    alert("Vui lòng nhập/dán ít nhất một từ tiếng Anh!");
+                    return;
+                }
+
+                setIsAiImporting(true);
+                setAiImportError(null);
+                setAiPreviewCards([]);
+
+                const prompt = `Generate English flashcard vocabulary data for the following ${cleanWords.length} words:\n${cleanWords.join('\n')}\n` +
+                    (customPromptNote ? `Additional note/context from user: ${customPromptNote}\n` : '') +
+                    `Requirements:
+1. Use American English (US English) by default for vocabulary, spelling, meaning, and examples.
+2. Return a JSON array containing an object for each requested word.
+3. "word": Exact English word provided in input, but if there is a clear US spelling difference (e.g., colour vs color), provide the US spelling ("color").
+4. "partOfSpeech": Part of speech (e.g. "noun", "verb", "adjective", "adverb", "preposition", "phrase", "phrasal verb"). Pick the most common usage in American English.
+5. "ipa": Standard General American IPA pronunciation.
+6. "meaning": Clear, accurate Vietnamese meaning corresponding to the common usage.
+7. "example": Natural conversational American English example sentence demonstrating the word in context.`;
+
+                const responseSchema = {
+                    type: "ARRAY",
+                    items: {
+                        type: "OBJECT",
+                        properties: {
+                            word: { type: "STRING" },
+                            partOfSpeech: { type: "STRING" },
+                            ipa: { type: "STRING" },
+                            meaning: { type: "STRING" },
+                            example: { type: "STRING" }
+                        },
+                        required: ["word", "partOfSpeech", "ipa", "meaning", "example"]
+                    }
+                };
+
+                try {
+                    const responseText = await callGeminiAPI(
+                        prompt,
+                        "You are an expert English lexicographer and flashcard generator specializing in American English. Always generate accurate JSON matching the schema.",
+                        responseSchema,
+                        userApiKey
+                    );
+
+                    let parsedData = JSON.parse(responseText);
+                    const validCards = parsedData.filter(item => item && item.word && item.meaning).map(item => ({
+                        word: String(item.word).trim(),
+                        partOfSpeech: String(item.partOfSpeech || 'noun').trim(),
+                        ipa: String(item.ipa || '').trim(),
+                        meaning: String(item.meaning).trim(),
+                        example: String(item.example || '').trim()
+                    }));
+
+                    if (validCards.length === 0) throw new Error("No valid vocabulary data generated.");
+                    setAiPreviewCards(validCards);
+                } catch (err) {
+                    setAiImportError(err.message || "Error processing AI Import.");
+                } finally {
+                    setIsAiImporting(false);
+                }
+            };
+
+            const handleSaveAiImportedCards = () => {
+                const destSetId = targetImportSetId || activeSetId;
+                if (!destSetId) { alert("Vui lòng chọn Học phần / Unit!"); return; }
+                if (aiPreviewCards.length === 0) return;
+
+                const newCardObjects = aiPreviewCards.map((item, idx) => ({
+                    id: 'card_ai_' + Date.now() + '_' + idx,
+                    setId: destSetId,
+                    english: item.word,
+                    word: item.word,
+                    german: item.word,
+                    article: item.partOfSpeech,
+                    partOfSpeech: item.partOfSpeech,
+                    ipa: item.ipa,
+                    plural: item.ipa,
+                    vietnamese: item.meaning,
+                    meaning: item.meaning,
+                    example: item.example,
+                    exampleTranslation: '',
+                    imageUrl: '',
+                    createdAt: getTodayString(),
+                    isLearned: false,
+                    inTrash: false
+                }));
+
+                const updatedCards = [...cards, ...newCardObjects];
+                setCards(updatedCards);
+                saveToLocalStorage(folders, sets, updatedCards);
+
+                showToast(`Đã thêm ${newCardObjects.length} Flashcard vào Unit!`);
+                setIsAiImportModalOpen(false);
+                setActiveSetId(destSetId);
+                if (currentView !== 'set') setCurrentView('set');
+            };
+
+            // FLASHCARD STUDY SESSION
+            const startStudy = () => {
+                if (!activeSetId) return;
+                const setCardsList = activeCards.filter(c => c.setId === activeSetId);
+                if (setCardsList.length === 0) { showToast("Học phần này chưa có thẻ từ vựng!"); return; }
+                let unlearnedCards = setCardsList.filter(c => !c.isLearned);
+                let cardsToStudy = unlearnedCards.length > 0 ? unlearnedCards : setCardsList;
+                setStudySession({ cards: fisherYatesShuffle(cardsToStudy), currentIndex: 0, isFlipped: false, showResult: false });
+                setCurrentView('study');
+            };
+
+            const nextStudyCard = (markAsLearned) => {
+                const currentCard = studySession.cards[studySession.currentIndex];
+                if (markAsLearned && !currentCard.isLearned) toggleCardLearned(currentCard);
+                if (studySession.currentIndex + 1 < studySession.cards.length) setStudySession(prev => ({ ...prev, currentIndex: prev.currentIndex + 1, isFlipped: false }));
+                else setStudySession(prev => ({ ...prev, showResult: true }));
+            };
+
+            // ==========================================
+            // UNIT EXERCISE GENERATION & EXECUTION ENGINE
+            // ==========================================
+            const openUnitExerciseModal = () => {
+                if (!activeSetId) return;
+                const setCardsList = activeCards.filter(c => c.setId === activeSetId);
+                if (setCardsList.length === 0) { showToast("Unit này chưa có từ vựng để làm bài tập!"); return; }
+                setExerciseConfig(prev => ({ ...prev, questionCount: Math.min(10, setCardsList.length) }));
+                setIsUnitExerciseModalOpen(true);
+            };
+
+            const startUnitExercise = async () => {
+                if (!userApiKey) {
+                    showToast("Vui lòng nhập Gemini API Key trong Settings để tạo bài tập AI!");
+                    setIsApiKeyModalOpen(true);
+                    return;
+                }
+
+                const unitCards = activeCards.filter(c => c.setId === activeSetId);
+                if (unitCards.length === 0) { showToast("Unit này không có từ vựng!"); return; }
+
+                const targetCount = Math.min(exerciseConfig.questionCount, unitCards.length);
+                const selectedCards = fisherYatesShuffle(unitCards).slice(0, targetCount);
+
+                setIsUnitExerciseModalOpen(false);
+                setUnitQuizState({
+                    questions: [],
+                    currentIndex: 0,
+                    userAnswers: {},
+                    aiEvaluations: {},
+                    isSubmitted: false,
+                    isLoadingAI: true,
+                    isEvaluating: false,
+                    overallFeedback: null
+                });
+                setCurrentView('unit_quiz_play');
+                setWrittenAnswerInput('');
+
+                try {
+                    const vocabSummary = selectedCards.map((c, i) => `${i+1}. Target Word: "${getCardWord(c)}", Meaning: "${getCardMeaning(c)}", Example: "${c.example || ''}"`).join('\n');
+
+                    const prompt = `You are an AI American English Teacher creating interactive exercises for a Unit.
+CRITICAL CONSTRAINT: You MUST strictly generate questions ONLY using target vocabulary from this current Unit list below. DO NOT use any words outside this Unit list as target answers.
+
+Unit Target Vocabulary List:
+${vocabSummary}
+
+Exercise Instructions:
+- Exercise Types requested: ${exerciseConfig.exerciseType} ('meaning_to_word', 'complete_sentence', 'make_sentence', or 'all')
+- Response Format requested: ${exerciseConfig.answerFormat} ('multiple_choice', 'written', or 'mixed')
+- Total Questions to Generate: ${selectedCards.length}
+
+Type Definitions:
+1. "meaning_to_word": Provide the English definition/meaning of the target word in "prompt". The student identifies the target word.
+2. "complete_sentence": Create a natural sentence with "_______" where the target word fits in context.
+3. "make_sentence": Set "prompt" to "Write a complete, natural English sentence using the target word: {targetWord}". (Always 'written' format).
+
+Requirements:
+- For 'multiple_choice' format: Provide 4 options in "options" array. One MUST be the correct targetWord. Distractors should be other words from this Unit or plausible choices.
+- Use American English spelling, grammar, and natural phrasing.
+
+JSON Schema Output:
+[
+  {
+    "cardId": "matching card id if known",
+    "targetWord": "exact target word from Unit",
+    "type": "meaning_to_word | complete_sentence | make_sentence",
+    "format": "multiple_choice | written",
+    "prompt": "The question prompt or sentence with blank",
+    "correctAnswer": "exact target word or answer",
+    "options": ["Option A", "Option B", "Option C", "Option D"]
+  }
+]`;
+
+                    const responseSchema = {
+                        type: "ARRAY",
+                        items: {
+                            type: "OBJECT",
+                            properties: {
+                                cardId: { type: "STRING" },
+                                targetWord: { type: "STRING" },
+                                type: { type: "STRING" },
+                                format: { type: "STRING" },
+                                prompt: { type: "STRING" },
+                                correctAnswer: { type: "STRING" },
+                                options: { type: "ARRAY", items: { type: "STRING" } }
+                            },
+                            required: ["targetWord", "type", "format", "prompt", "correctAnswer"]
+                        }
+                    };
+
+                    const rawJson = await callGeminiAPI(
+                        prompt,
+                        "You are an expert American English exercise generator. Use ONLY vocabulary from the provided Unit. Return JSON array matching schema.",
+                        responseSchema,
+                        userApiKey
+                    );
+
+                    const parsedQuestions = JSON.parse(rawJson);
+                    const formattedQuestions = parsedQuestions.map((q, idx) => {
+                        const matchedCard = selectedCards.find(c => getCardWord(c).toLowerCase() === (q.targetWord || '').toLowerCase()) || selectedCards[idx % selectedCards.length];
+                        const format = q.type === 'make_sentence' ? 'written' : (exerciseConfig.answerFormat === 'mixed' ? (Math.random() > 0.5 ? 'multiple_choice' : 'written') : q.format || 'written');
+                        
+                        let opts = q.options;
+                        if (format === 'multiple_choice' && (!opts || opts.length < 4)) {
+                            const pool = unitCards.map(getCardWord).filter(w => w.toLowerCase() !== q.correctAnswer.toLowerCase());
+                            const shuffledPool = fisherYatesShuffle(Array.from(new Set(pool))).slice(0, 3);
+                            opts = fisherYatesShuffle([q.correctAnswer, ...shuffledPool]);
+                        }
+
+                        return {
+                            id: 'q_' + idx + '_' + Date.now(),
+                            cardId: matchedCard ? matchedCard.id : '',
+                            targetWord: q.targetWord || getCardWord(matchedCard),
+                            type: q.type || 'meaning_to_word',
+                            format: format,
+                            prompt: q.prompt,
+                            correctAnswer: q.correctAnswer || getCardWord(matchedCard),
+                            options: opts || []
+                        };
+                    });
+
+                    setUnitQuizState(prev => ({
+                        ...prev,
+                        questions: formattedQuestions,
+                        currentIndex: 0,
+                        userAnswers: {},
+                        aiEvaluations: {},
+                        isSubmitted: false,
+                        isLoadingAI: false
+                    }));
+
+                } catch (err) {
+                    showToast("Lỗi khi tạo bài tập AI: " + err.message);
+                    setCurrentView('set');
+                    setUnitQuizState(prev => ({ ...prev, isLoadingAI: false }));
+                }
+            };
+
+            const submitUnitQuestionAnswer = async (answerVal) => {
+                const currentQ = unitQuizState.questions[unitQuizState.currentIndex];
+                if (!currentQ || unitQuizState.aiEvaluations[currentQ.id]) return;
+
+                const finalAnswer = (answerVal || writtenAnswerInput || '').trim();
+                if (!finalAnswer) { showToast("Vui lòng nhập hoặc chọn câu trả lời!"); return; }
+
+                const matchedCard = activeCards.find(c => c.id === currentQ.cardId || getCardWord(c).toLowerCase() === currentQ.targetWord.toLowerCase());
+
+                if (currentQ.format === 'multiple_choice') {
+                    const isRight = finalAnswer.toLowerCase() === currentQ.correctAnswer.toLowerCase();
+                    const evalObj = {
+                        correct: isRight,
+                        score: isRight ? 100 : 0,
+                        userAnswer: finalAnswer,
+                        correctAnswer: currentQ.correctAnswer,
+                        correction: isRight ? finalAnswer : currentQ.correctAnswer,
+                        explanation: isRight 
+                            ? `Chính xác! "${currentQ.correctAnswer}" có nghĩa là: ${matchedCard ? getCardMeaning(matchedCard) : ''}.`
+                            : `Đáp án đúng là "${currentQ.correctAnswer}" (${matchedCard ? getCardMeaning(matchedCard) : ''}).`,
+                        feedback: isRight ? "Rất tốt! Bạn đã chọn đúng từ vựng của Unit." : "Hãy ôn lại nghĩa và cách viết của từ vựng này."
+                    };
+
+                    setUnitQuizState(prev => ({
+                        ...prev,
+                        userAnswers: { ...prev.userAnswers, [currentQ.id]: finalAnswer },
+                        aiEvaluations: { ...prev.aiEvaluations, [currentQ.id]: evalObj }
+                    }));
+                    return;
+                }
+
+                // WRITTEN ANSWER EVALUATION VIA AI
+                setUnitQuizState(prev => ({ ...prev, isEvaluating: true }));
+
+                try {
+                    const prompt = `Evaluate student's answer for American English exercise.
+Target Vocabulary Word: "${currentQ.targetWord}" (Meaning: "${matchedCard ? getCardMeaning(matchedCard) : ''}")
+Exercise Type: "${currentQ.type}"
+Question Prompt: "${currentQ.prompt}"
+Expected Answer/Target: "${currentQ.correctAnswer}"
+Student Answer: "${finalAnswer}"
+
+Evaluation Rules:
+1. For "meaning_to_word": Check if student wrote the correct word or a valid exact synonym. Allow minor typos if minor.
+2. For "complete_sentence": Check if student's answer fits context, is grammatically correct, and uses correct target word form. If student wrote a valid, natural synonym that logically fits the sentence, ACCEPT IT as correct!
+3. For "make_sentence": Check if student wrote a full valid sentence using target word (or inflected forms like 'traveled' if target is 'travel'). Check grammar, spelling, context, natural American English usage.
+4. Evaluate based on American English standards.
+
+JSON Schema Output:
+{
+  "correct": boolean,
+  "score": number (0-100),
+  "userAnswer": "${finalAnswer}",
+  "correctAnswer": "${currentQ.correctAnswer}",
+  "correction": "Corrected sentence or improved form if user had errors",
+  "explanation": "Short, clear explanation of why it is correct/incorrect, key grammar or word usage point",
+  "feedback": "Encouraging coaching feedback"
+}`;
+
+                    const responseSchema = {
+                        type: "OBJECT",
+                        properties: {
+                            correct: { type: "BOOLEAN" },
+                            score: { type: "NUMBER" },
+                            userAnswer: { type: "STRING" },
+                            correctAnswer: { type: "STRING" },
+                            correction: { type: "STRING" },
+                            explanation: { type: "STRING" },
+                            feedback: { type: "STRING" }
+                        },
+                        required: ["correct", "score", "userAnswer", "correctAnswer", "explanation", "feedback"]
+                    };
+
+                    const evalText = await callGeminiAPI(
+                        prompt,
+                        "You are an American English language tutor. Grade student exercise answers accurately and constructively in JSON.",
+                        responseSchema,
+                        userApiKey
+                    );
+
+                    const evalResult = JSON.parse(evalText);
+
+                    setUnitQuizState(prev => ({
+                        ...prev,
+                        isEvaluating: false,
+                        userAnswers: { ...prev.userAnswers, [currentQ.id]: finalAnswer },
+                        aiEvaluations: { ...prev.aiEvaluations, [currentQ.id]: evalResult }
+                    }));
+
+                } catch (err) {
+                    setUnitQuizState(prev => ({ ...prev, isEvaluating: false }));
+                    // Safe Fallback evaluation
+                    const isRight = finalAnswer.toLowerCase().includes(currentQ.correctAnswer.toLowerCase());
+                    const fallbackEval = {
+                        correct: isRight,
+                        score: isRight ? 100 : 0,
+                        userAnswer: finalAnswer,
+                        correctAnswer: currentQ.correctAnswer,
+                        correction: currentQ.correctAnswer,
+                        explanation: isRight ? "Câu trả lời của bạn chính xác." : `Đáp án gợi ý: "${currentQ.correctAnswer}"`,
+                        feedback: isRight ? "Làm tốt lắm!" : "Cần rèn luyện thêm với từ này."
+                    };
+
+                    setUnitQuizState(prev => ({
+                        ...prev,
+                        userAnswers: { ...prev.userAnswers, [currentQ.id]: finalAnswer },
+                        aiEvaluations: { ...prev.aiEvaluations, [currentQ.id]: fallbackEval }
+                    }));
+                }
+            };
+
+            const handleNextUnitQuestion = () => {
+                if (unitQuizState.currentIndex + 1 < unitQuizState.questions.length) {
+                    setUnitQuizState(prev => ({ ...prev, currentIndex: prev.currentIndex + 1 }));
+                    setWrittenAnswerInput('');
+                } else {
+                    finishUnitQuizSession();
+                }
+            };
+
+            const finishUnitQuizSession = async () => {
+                const total = unitQuizState.questions.length;
+                let correctCount = 0;
+                let wrongCount = 0;
+
+                unitQuizState.questions.forEach(q => {
+                    const ev = unitQuizState.aiEvaluations[q.id];
+                    if (ev && ev.correct) correctCount++;
+                    else wrongCount++;
+                });
+
+                setCurrentView('unit_quiz_summary');
+
+                // Generate Overall AI Feedback
+                if (userApiKey) {
+                    try {
+                        const summaryData = unitQuizState.questions.map((q, idx) => {
+                            const ev = unitQuizState.aiEvaluations[q.id] || {};
+                            return `${idx+1}. Word: "${q.targetWord}", Type: ${q.type}, Student Answer: "${ev.userAnswer || ''}", Status: ${ev.correct ? 'Correct' : 'Incorrect'}`;
+                        }).join('\n');
+
+                        const prompt = `Student finished Unit practice test. Generate overall AI feedback summary based on ACTUAL errors.
+Unit Title: "${currentSet ? currentSet.title : 'Unit'}"
+Results: ${correctCount}/${total} correct.
+
+Summary of Questions & Results:
+${summaryData}
+
+Requirements:
+- Overall message evaluating their performance.
+- List common mistake categories identified from their actual errors (e.g. Word Usage, Grammar, Spelling).
+- List specific vocabulary words they need to review.
+
+JSON Schema:
+{
+  "overallMsg": "Clear feedback message...",
+  "commonMistakes": ["Mistake 1", "Mistake 2"],
+  "reviewWords": ["Word 1", "Word 2"]
+}`;
+
+                        const schema = {
+                            type: "OBJECT",
+                            properties: {
+                                overallMsg: { type: "STRING" },
+                                commonMistakes: { type: "ARRAY", items: { type: "STRING" } },
+                                reviewWords: { type: "ARRAY", items: { type: "STRING" } }
+                            },
+                            required: ["overallMsg", "commonMistakes", "reviewWords"]
+                        };
+
+                        const rawFeedback = await callGeminiAPI(prompt, "Provide constructive summary feedback in JSON based on actual exercise performance.", schema, userApiKey);
+                        const parsedFb = JSON.parse(rawFeedback);
+                        setUnitQuizState(prev => ({ ...prev, isSubmitted: true, overallFeedback: parsedFb }));
+                    } catch (e) {
+                        setUnitQuizState(prev => ({
+                            ...prev,
+                            isSubmitted: true,
+                            overallFeedback: {
+                                overallMsg: `Bạn đã hoàn thành bài tập với ${correctCount}/${total} câu đúng. Hãy tiếp tục duy trì!`,
+                                commonMistakes: ["Cần lưu ý cách chia từ và chính tả"],
+                                reviewWords: unitQuizState.questions.filter(q => !unitQuizState.aiEvaluations[q.id]?.correct).map(q => q.targetWord)
+                            }
+                        }));
+                    }
+                } else {
+                    setUnitQuizState(prev => ({ ...prev, isSubmitted: true }));
+                }
+            };
+
+            const activeFolders = folders.filter(f => !f.inTrash);
+            const activeSets = sets.filter(s => !s.inTrash);
+            const activeCards = cards.filter(c => !c.inTrash);
+            const currentFolder = activeFolders.find(f => f.id === activeFolderId);
+            const currentSet = activeSets.find(s => s.id === activeSetId);
+
+            return (
+                <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col md:flex-row font-sans antialiased">
+                    <input type="file" ref={fileInputRef} onChange={handleImportJSON} accept=".json" className="hidden" />
+
+                    {toastMessage && (
+                        <div className="fixed top-5 right-5 z-50 bg-emerald-600 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-2 animate-bounce">
+                            <Icons.Sparkles /> <span className="font-medium text-sm">{toastMessage}</span>
+                        </div>
+                    )}
+
+                    {/* Sidebar */}
+                    <aside className={`fixed md:static inset-y-0 left-0 z-40 w-72 bg-slate-950 border-r border-slate-800 flex flex-col transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
+                        <div className="p-5 border-b border-slate-800 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <span className="text-2xl">🇺🇸</span>
+                                <div>
+                                    <h1 className="font-bold text-lg text-amber-400 leading-tight">English AI</h1>
+                                    <p className="text-xs text-slate-400">Learn American English</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setSidebarOpen(false)} className="md:hidden p-2 text-slate-400 hover:text-white rounded-lg"><Icons.Cross /></button>
+                        </div>
+
+                        <nav className="flex-1 overflow-y-auto p-4 space-y-2">
+                            <button onClick={() => { setCurrentView('dashboard'); setActiveFolderId(null); setActiveSetId(null); setSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all ${currentView === 'dashboard' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'}`}>
+                                <Icons.Home /> Home & Folders
+                            </button>
+                            
+                            <button onClick={() => { openQuickAiImportModal(); setSidebarOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all shadow-sm">
+                                <Icons.Sparkles /> Nhập nhanh bằng AI
+                            </button>
+
+                            <button onClick={() => { setCurrentView('trash'); setSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all ${currentView === 'trash' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'}`}>
+                                <Icons.Trash /> Trash
+                            </button>
+
+                            <div className="pt-4 border-t border-slate-800/80 space-y-1">
+                                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-2">Settings</span>
+                                <button onClick={() => setIsApiKeyModalOpen(true)} className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-400 hover:text-amber-400 hover:bg-slate-900 rounded-lg transition-colors"><Icons.Key /> Gemini API Key</button>
+                                <button onClick={exportDataJSON} className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-400 hover:text-amber-400 hover:bg-slate-900 rounded-lg transition-colors"><Icons.Download /> Export JSON Backup</button>
+                                <button onClick={() => fileInputRef.current && fileInputRef.current.click()} className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-400 hover:text-emerald-400 hover:bg-slate-900 rounded-lg transition-colors"><Icons.Upload /> Import JSON Restore</button>
+                            </div>
+
+                            <div className="pt-4 mt-2 border-t border-slate-800/80">
+                                <div className="flex items-center justify-between px-2 mb-2">
+                                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">My Folders</span>
+                                    <button onClick={() => { setEditingFolder(null); setFolderForm({ name: '', description: '' }); setIsFolderModalOpen(true); }} className="p-1 hover:bg-slate-800 text-amber-400 rounded-lg transition-colors" title="Create New Folder"><Icons.Plus /></button>
+                                </div>
+                                <div className="space-y-1">
+                                    {activeFolders.length === 0 ? <p className="text-xs text-slate-500 px-2 py-1 italic">No folders yet</p> : activeFolders.map(f => (
+                                        <SidebarFolderItem key={f.id} folder={f} countSets={activeSets.filter(s => s.folderId === f.id).length} isSelected={activeFolderId === f.id && (currentView === 'folder' || currentView === 'set' || currentView === 'study')} onSelect={() => { setActiveFolderId(f.id); setActiveSetId(null); setCurrentView('folder'); setSidebarOpen(false); }} onLongPressDelete={() => handleLongPressDeleteFolder(f)} />
+                                    ))}
+                                </div>
+                            </div>
+                        </nav>
+                    </aside>
+
+                    {/* Main Workspace */}
+                    <div className="flex-1 flex flex-col min-w-0 relative">
+                        <header className="h-16 border-b border-slate-800 bg-slate-950/80 backdrop-blur px-4 md:px-8 flex items-center justify-between sticky top-0 z-30">
+                            <div className="flex items-center gap-3 overflow-hidden">
+                                <button onClick={() => setSidebarOpen(true)} className="md:hidden p-2 -ml-2 text-slate-400 hover:text-white"><Icons.Menu /></button>
+                                <div className="flex items-center gap-2 text-sm text-slate-400 overflow-x-auto whitespace-nowrap scrollbar-hide py-2">
+                                    <button onClick={() => { setCurrentView('dashboard'); setActiveFolderId(null); setActiveSetId(null); }} className="hover:text-amber-400 flex items-center gap-1 flex-shrink-0"><Icons.Home /> Home</button>
+                                    
+                                    {currentFolder && <><Icons.ChevronRight /><button onClick={() => { setCurrentView('folder'); setActiveSetId(null); }} className={`hover:text-amber-400 flex-shrink-0 ${!currentSet ? 'text-white font-semibold' : ''}`}>Folder: {currentFolder.name}</button></>}
+                                    {currentSet && <><Icons.ChevronRight /><span className={`flex-shrink-0 max-w-[150px] md:max-w-xs truncate ${currentView !== 'study' && currentView !== 'unit_quiz_play' && currentView !== 'unit_quiz_summary' ? 'text-white font-semibold' : ''}`}>Unit: {currentSet.title}</span></>}
+                                    
+                                    {(currentView === 'unit_quiz_play' || currentView === 'unit_quiz_summary') && <><Icons.ChevronRight /><span className="text-amber-400 font-semibold flex-shrink-0">{currentView === 'unit_quiz_summary' ? 'Kết quả Bài tập' : 'Làm Bài tập AI'}</span></>}
+                                </div>
+                            </div>
+                        </header>
+
+                        <main className="flex-1 p-4 md:p-8 overflow-y-auto relative">
+                            
+                            {/* DASHBOARD */}
+                            {currentView === 'dashboard' && (
+                                <div className="max-w-6xl mx-auto space-y-8 animate-fade-in">
+                                    <div className="bg-gradient-to-r from-amber-600/20 via-slate-800 to-slate-900 border border-amber-500/20 rounded-2xl p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                        <div>
+                                            <h2 className="text-2xl font-bold text-white flex items-center gap-2">Welcome! 🇺🇸</h2>
+                                            <p className="text-slate-400 text-sm mt-1">Hệ thống học tiếng Anh Mỹ thông minh với Flashcard linh hoạt & Bài tập AI theo từng Unit.</p>
+                                        </div>
+                                        <div className="flex flex-wrap gap-2 flex-shrink-0">
+                                            <button onClick={() => openQuickAiImportModal()} className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold px-4 py-2.5 rounded-xl flex items-center gap-2 shadow-lg transition-transform hover:scale-105 text-sm"><Icons.Sparkles /> Nhập nhanh bằng AI</button>
+                                            <button onClick={() => { setEditingFolder(null); setFolderForm({ name: '', description: '' }); setIsFolderModalOpen(true); }} className="bg-slate-800 hover:bg-slate-700 text-white font-semibold px-4 py-2.5 rounded-xl flex items-center gap-2 border border-slate-700 transition-all text-sm"><Icons.Plus /> Create Folder</button>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-bold text-slate-200 flex items-center gap-2 mb-4"><Icons.Folder /> Folders List ({activeFolders.length})</h3>
+                                        {activeFolders.length === 0 ? <div className="bg-slate-950/50 border border-dashed border-slate-800 rounded-2xl p-8 text-center"><p className="text-slate-400 mb-4">No folders yet. Create your first one!</p></div> : 
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            {activeFolders.map(f => <FolderGridCard key={f.id} folder={f} folderSetsCount={activeSets.filter(s => s.folderId === f.id).length} onSelect={() => { setActiveFolderId(f.id); setCurrentView('folder'); }} onEdit={(e) => { e.stopPropagation(); setEditingFolder(f); setFolderForm({ name: f.name, description: f.description || '' }); setIsFolderModalOpen(true); }} onLongPressDelete={() => handleLongPressDeleteFolder(f)} />)}
+                                        </div>}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* FOLDER VIEW */}
+                            {currentView === 'folder' && currentFolder && (
+                                <div className="max-w-6xl mx-auto space-y-6 animate-fade-in">
+                                    <div className="bg-slate-950 border border-slate-800 rounded-2xl p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                        <div>
+                                            <div className="flex items-center gap-2 text-amber-400 text-xs font-semibold uppercase tracking-wider mb-1"><Icons.Folder /> Folder</div>
+                                            <h2 className="text-2xl font-bold text-white">{currentFolder.name}</h2>
+                                        </div>
+                                        <div className="flex items-center gap-3 flex-wrap">
+                                            <button onClick={() => openQuickAiImportModal()} className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold px-4 py-2 rounded-xl flex items-center gap-2 shadow-lg transition-transform hover:scale-105 text-sm"><Icons.Sparkles /> Nhập nhanh bằng AI</button>
+                                            <button onClick={() => { setEditingSet(null); setSetForm({ title: '', description: '', folderId: currentFolder.id }); setIsSetModalOpen(true); }} className="bg-slate-800 hover:bg-slate-700 text-white font-semibold px-4 py-2 rounded-xl flex items-center gap-2 border border-slate-700 transition-all text-sm"><Icons.Plus /> Add Study Set / Unit</button>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-bold text-slate-200 flex items-center gap-2 mb-4"><Icons.Book /> Sets in this folder</h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            {activeSets.filter(s => s.folderId === currentFolder.id).map(s => <SetGridCard key={s.id} setItem={s} cardsCount={activeCards.filter(c => c.setId === s.id).length} onSelect={() => { setActiveSetId(s.id); setCurrentView('set'); }} onEdit={(e) => { e.stopPropagation(); setEditingSet(s); setSetForm({ title: s.title, description: s.description || '', folderId: s.folderId }); setIsSetModalOpen(true); }} onLongPressDelete={() => handleLongPressDeleteSet(s)} />)}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* SET / UNIT VIEW */}
+                            {currentView === 'set' && currentSet && (
+                                <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
+                                    <div className="bg-slate-950 border-b-4 border-amber-500 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+                                        <div className="relative z-10">
+                                            <div className="text-xs font-bold text-amber-400 uppercase tracking-wider mb-1">Unit / Học phần</div>
+                                            <h2 className="text-3xl font-bold text-white mb-2">{currentSet.title}</h2>
+                                            {currentSet.description && <p className="text-slate-400 text-sm mb-4">{currentSet.description}</p>}
+                                            <div className="flex flex-wrap items-center gap-3 mt-4">
+                                                <button onClick={startStudy} className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-5 py-3 rounded-xl flex items-center gap-2 shadow-lg"><Icons.Study /> Flashcards</button>
+                                                <button onClick={openUnitExerciseModal} className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold px-5 py-3 rounded-xl flex items-center gap-2 shadow-lg transition-transform hover:scale-105"><Icons.Quiz /> 🎯 Bài tập AI Unit</button>
+                                                <button onClick={() => openQuickAiImportModal(currentSet.id)} className="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold px-5 py-3 rounded-xl flex items-center gap-2 transition-all"><Icons.Sparkles /> Nhập bằng AI</button>
+                                                <button onClick={() => { setEditingCard(null); setCardForm({ english: '', vietnamese: '', example: '', exampleTranslation: '', imageUrl: '', plural: '', partOfSpeech: 'noun', ipa: '' }); setIsCardModalOpen(true); }} className="bg-slate-800 hover:bg-slate-700 text-white font-semibold px-4 py-3 rounded-xl flex items-center gap-2 border border-slate-700 transition-all text-sm"><Icons.Plus /> Add Word</button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h3 className="text-lg font-bold text-slate-200 flex items-center gap-2"><Icons.Card /> Cards List ({activeCards.filter(c => c.setId === currentSet.id).length})</h3>
+                                        </div>
+                                        <div className="space-y-3">
+                                            {activeCards.filter(c => c.setId === currentSet.id).length === 0 ? (
+                                                <div className="bg-slate-950/50 border border-dashed border-slate-800 rounded-2xl p-8 text-center">
+                                                    <p className="text-slate-400 mb-4">Chưa có từ vựng trong Unit này.</p>
+                                                    <button onClick={() => openQuickAiImportModal(currentSet.id)} className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-xl inline-flex items-center gap-2"><Icons.Sparkles /> Thêm từ bằng AI</button>
+                                                </div>
+                                            ) : (
+                                                activeCards.filter(c => c.setId === currentSet.id).map(card => (
+                                                    <FlashcardListItem key={card.id} card={card} onEdit={(e) => { setEditingCard(card); setCardForm({ english: getCardWord(card), vietnamese: getCardMeaning(card), example: card.example || '', exampleTranslation: card.exampleTranslation || '', imageUrl: card.imageUrl || '', plural: card.plural || '', partOfSpeech: card.partOfSpeech || 'noun', ipa: card.ipa || '' }); setIsCardModalOpen(true); }} onToggleLearned={toggleCardLearned} onLongPressDelete={() => handleLongPressDeleteCard(card)} />
+                                                ))
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* FLASHCARD STUDY VIEW */}
+                            {currentView === 'study' && studySession.cards.length > 0 && (
+                                <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
+                                    <div className="flex items-center justify-between">
+                                        <button onClick={() => setCurrentView('set')} className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm"><Icons.ArrowLeft /> Back to Unit</button>
+                                        
+                                        {/* LANGUAGE FLIP TOGGLE BUTTON */}
+                                        <button onClick={toggleFlashcardDirection} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold text-xs rounded-xl border border-amber-500/30 flex items-center gap-2 transition-all shadow-sm">
+                                            <Icons.Refresh /> Hướng: {flashcardDirection === 'de-en' ? 'GERMAN → ENGLISH' : 'ENGLISH → GERMAN'}
+                                        </button>
+
+                                        <span className="text-sm font-semibold text-slate-400">{studySession.currentIndex + 1} / {studySession.cards.length}</span>
+                                    </div>
+
+                                    {!studySession.showResult ? (
+                                        (() => {
+                                            const currentCard = studySession.cards[studySession.currentIndex];
+                                            const word = getCardWord(currentCard);
+                                            const meaning = getCardMeaning(currentCard);
+                                            const partOfSpeech = currentCard.partOfSpeech || currentCard.article || '';
+                                            const posAbbr = getPosAbbreviation(partOfSpeech);
+
+                                            // Determine Front and Back based on language direction preference
+                                            const isGermanFirst = flashcardDirection === 'de-en';
+                                            const frontText = isGermanFirst ? meaning : word;
+                                            const backText = isGermanFirst ? word : meaning;
+                                            const frontLangLabel = isGermanFirst ? "GERMAN / NGHĨA" : "ENGLISH";
+                                            const backLangLabel = isGermanFirst ? "ENGLISH" : "GERMAN / NGHĨA";
+                                            const isWordShowing = (!studySession.isFlipped && !isGermanFirst) || (studySession.isFlipped && isGermanFirst);
+
+                                            return (
+                                                <div className="space-y-6">
+                                                    <div onClick={() => setStudySession(prev => ({ ...prev, isFlipped: !prev.isFlipped }))} className="w-full h-80 bg-slate-800 border-2 border-slate-700 hover:border-amber-500/50 rounded-3xl p-8 flex flex-col justify-between items-center text-center cursor-pointer shadow-2xl transition-all relative overflow-hidden select-none">
+                                                        <div className="flex items-center justify-between w-full">
+                                                            <span className="text-xs font-bold uppercase tracking-wider text-amber-400 bg-amber-500/10 px-3 py-1 rounded-full">
+                                                                {!studySession.isFlipped ? frontLangLabel : backLangLabel}
+                                                            </span>
+                                                            <button onClick={(e) => { e.stopPropagation(); playAudio(word); }} className="p-2 bg-slate-900 text-amber-400 hover:bg-amber-500 hover:text-slate-950 rounded-full transition-colors"><Icons.Speaker /></button>
+                                                        </div>
+
+                                                        <div className="my-auto">
+                                                            <h3 className="text-3xl font-bold text-white mb-2">
+                                                                {!studySession.isFlipped ? frontText : backText}
+                                                                {isWordShowing && posAbbr && <span className="text-lg text-amber-400 font-mono ml-2 font-normal">({posAbbr})</span>}
+                                                            </h3>
+                                                            {(!studySession.isFlipped && !isGermanFirst && currentCard.ipa) && <p className="text-sm text-slate-400 font-mono">{currentCard.ipa}</p>}
+                                                            {(studySession.isFlipped && isGermanFirst && currentCard.ipa) && <p className="text-sm text-slate-400 font-mono">{currentCard.ipa}</p>}
+                                                            {studySession.isFlipped && currentCard.example && (
+                                                                <p className="text-sm text-slate-300 italic mt-4 max-w-md">"{currentCard.example}"</p>
+                                                            )}
+                                                        </div>
+
+                                                        <p className="text-xs text-slate-500 font-medium">Click to flip card</p>
+                                                    </div>
+
+                                                    <div className="flex items-center justify-between gap-4">
+                                                        <button onClick={() => nextStudyCard(false)} className="flex-1 py-4 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-2xl border border-slate-700 transition-all flex items-center justify-center gap-2"><Icons.Cross /> Needs Practice</button>
+                                                        <button onClick={() => nextStudyCard(true)} className="flex-1 py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2"><Icons.Check /> Got It!</button>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })()
+                                    ) : (
+                                        <div className="bg-slate-950 border border-slate-800 rounded-3xl p-8 text-center space-y-6">
+                                            <div className="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center mx-auto"><Icons.Trophy /></div>
+                                            <h3 className="text-2xl font-bold text-white">Thẻ Học Hoàn Thành!</h3>
+                                            <p className="text-slate-400 text-sm">Bạn đã ôn tập xong tất cả thẻ từ vựng trong lượt này.</p>
+                                            <div className="flex gap-4 justify-center">
+                                                <button onClick={startStudy} className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-6 py-3 rounded-xl">Học Lại</button>
+                                                <button onClick={() => setCurrentView('set')} className="bg-slate-800 hover:bg-slate-700 text-white font-bold px-6 py-3 rounded-xl">Quay Lại Unit</button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* UNIT EXERCISE PLAY VIEW */}
+                            {currentView === 'unit_quiz_play' && (
+                                <div className="max-w-3xl mx-auto space-y-6 animate-fade-in">
+                                    {unitQuizState.isLoadingAI ? (
+                                        <div className="bg-slate-950 border border-slate-800 rounded-3xl p-12 text-center space-y-4">
+                                            <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                                            <h3 className="text-xl font-bold text-white">AI đang tạo bài tập cho Unit...</h3>
+                                            <p className="text-slate-400 text-sm">Chỉ sử dụng duy nhất các từ vựng trong Unit hiện tại của bạn.</p>
+                                        </div>
+                                    ) : unitQuizState.questions.length > 0 ? (
+                                        (() => {
+                                            const q = unitQuizState.questions[unitQuizState.currentIndex];
+                                            const evalObj = unitQuizState.aiEvaluations[q.id];
+                                            const isAnswered = !!evalObj;
+
+                                            return (
+                                                <div className="space-y-6">
+                                                    {/* Top bar */}
+                                                    <div className="flex items-center justify-between bg-slate-950 px-5 py-3 rounded-2xl border border-slate-800">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-xs font-bold text-amber-400 uppercase tracking-wider bg-amber-500/10 px-3 py-1 rounded-full">
+                                                                {q.type === 'meaning_to_word' ? 'Meaning ➔ Word' : q.type === 'complete_sentence' ? 'Complete Sentence' : 'Make Your Sentence'}
+                                                            </span>
+                                                            <span className="text-xs font-medium text-slate-400 bg-slate-800 px-2.5 py-1 rounded-full">
+                                                                {q.format === 'multiple_choice' ? 'Multiple Choice' : 'Written Answer'}
+                                                            </span>
+                                                        </div>
+                                                        <span className="text-sm font-semibold text-slate-400">Câu {unitQuizState.currentIndex + 1} / {unitQuizState.questions.length}</span>
+                                                    </div>
+
+                                                    {/* Progress Bar */}
+                                                    <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                                                        <div className="bg-amber-500 h-full transition-all duration-300" style={{ width: `${((unitQuizState.currentIndex + 1) / unitQuizState.questions.length) * 100}%` }}></div>
+                                                    </div>
+
+                                                    {/* Question Box */}
+                                                    <div className="bg-slate-950 border border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 shadow-xl">
+                                                        <div className="space-y-2">
+                                                            <h3 className="text-2xl font-bold text-white leading-relaxed">{q.prompt}</h3>
+                                                            {q.targetWord && q.type === 'make_sentence' && (
+                                                                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-400 font-mono font-bold text-sm">
+                                                                    <Icons.Target /> Target Word: "{q.targetWord}"
+                                                                </div>
+                                                            )}
+                                                        </div>
+
+                                                        {/* MULTIPLE CHOICE FORMAT */}
+                                                        {q.format === 'multiple_choice' && (
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                                                                {q.options.map((opt, oIdx) => {
+                                                                    let btnStyle = "bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700";
+                                                                    if (isAnswered) {
+                                                                        if (opt.toLowerCase() === q.correctAnswer.toLowerCase()) {
+                                                                            btnStyle = "bg-emerald-600 text-white font-bold border-emerald-500";
+                                                                        } else if (evalObj.userAnswer.toLowerCase() === opt.toLowerCase() && !evalObj.correct) {
+                                                                            btnStyle = "bg-rose-600 text-white font-bold border-rose-500";
+                                                                        } else {
+                                                                            btnStyle = "bg-slate-900 text-slate-600 border-slate-800 opacity-50";
+                                                                        }
+                                                                    }
+
+                                                                    return (
+                                                                        <button
+                                                                            key={oIdx}
+                                                                            disabled={isAnswered}
+                                                                            onClick={() => submitUnitQuestionAnswer(opt)}
+                                                                            className={`p-4 rounded-2xl border text-left font-semibold text-base transition-all ${btnStyle}`}
+                                                                        >
+                                                                            {opt}
+                                                                        </button>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        )}
+
+                                                        {/* WRITTEN ANSWER FORMAT */}
+                                                        {q.format === 'written' && (
+                                                            <div className="space-y-4 pt-2">
+                                                                <textarea
+                                                                    ref={writtenInputRef}
+                                                                    disabled={isAnswered || unitQuizState.isEvaluating}
+                                                                    value={writtenAnswerInput}
+                                                                    onChange={(e) => setWrittenAnswerInput(e.target.value)}
+                                                                    onKeyDown={(e) => {
+                                                                        if (e.key === 'Enter' && !e.shiftKey && !isAnswered) {
+                                                                            e.preventDefault();
+                                                                            submitUnitQuestionAnswer();
+                                                                        }
+                                                                    }}
+                                                                    placeholder={q.type === 'make_sentence' ? "Viết câu tiếng Anh hoàn chỉnh của bạn tại đây..." : "Nhập câu trả lời của bạn..."}
+                                                                    className="w-full h-32 bg-slate-900 border border-slate-700 rounded-2xl p-4 text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-colors resize-none font-medium"
+                                                                />
+                                                                {!isAnswered && (
+                                                                    <button
+                                                                        disabled={unitQuizState.isEvaluating}
+                                                                        onClick={() => submitUnitQuestionAnswer()}
+                                                                        className="w-full py-3.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-2xl transition-all shadow-lg flex items-center justify-center gap-2"
+                                                                    >
+                                                                        {unitQuizState.isEvaluating ? (
+                                                                            <><div className="w-5 h-5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin"></div> AI đang chấm bài...</>
+                                                                        ) : "Nộp bài / Submit"}
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        )}
+
+                                                        {/* EVALUATION FEEDBACK BOX */}
+                                                        {isAnswered && (
+                                                            <div className={`p-5 rounded-2xl border animate-slide-up space-y-3 ${evalObj.correct ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-200' : 'bg-rose-950/40 border-rose-500/50 text-rose-200'}`}>
+                                                                <div className="flex items-center gap-2 font-bold text-lg">
+                                                                    {evalObj.correct ? <span className="p-1 bg-emerald-500 text-slate-950 rounded-full"><Icons.Check /></span> : <span className="p-1 bg-rose-500 text-white rounded-full"><Icons.Cross /></span>}
+                                                                    <span>{evalObj.correct ? "Chính xác!" : "Chưa chính xác"}</span>
+                                                                </div>
+
+                                                                {!evalObj.correct && (
+                                                                    <div className="text-sm space-y-1 bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                                                                        <p><span className="text-slate-400">Đáp án chuẩn/gợi ý:</span> <strong className="text-emerald-400">{evalObj.correctAnswer}</strong></p>
+                                                                        {evalObj.correction && <p><span className="text-slate-400">Sửa lỗi/Câu hoàn chỉnh:</span> <span className="text-amber-300 font-medium">{evalObj.correction}</span></p>}
+                                                                    </div>
+                                                                )}
+
+                                                                <div className="text-sm space-y-1">
+                                                                    <p className="font-semibold text-slate-300">Giải thích:</p>
+                                                                    <p className="text-slate-300 leading-relaxed">{evalObj.explanation}</p>
+                                                                </div>
+
+                                                                {evalObj.feedback && (
+                                                                    <div className="text-xs italic text-amber-300 border-t border-slate-800/80 pt-2">
+                                                                        💡 AI Feedback: {evalObj.feedback}
+                                                                    </div>
+                                                                )}
+
+                                                                <button onClick={handleNextUnitQuestion} className="w-full mt-4 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl border border-slate-700 flex items-center justify-center gap-2 transition-all">
+                                                                    {unitQuizState.currentIndex + 1 < unitQuizState.questions.length ? "Câu tiếp theo ➔" : "Xem kết quả bài tập ➔"}
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })()
+                                    ) : null}
+                                </div>
+                            )}
+
+                            {/* UNIT EXERCISE SUMMARY VIEW */}
+                            {currentView === 'unit_quiz_summary' && (
+                                <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
+                                    {(() => {
+                                        const total = unitQuizState.questions.length;
+                                        let correctCount = 0;
+                                        let wrongCount = 0;
+
+                                        unitQuizState.questions.forEach(q => {
+                                            const ev = unitQuizState.aiEvaluations[q.id];
+                                            if (ev && ev.correct) correctCount++;
+                                            else wrongCount++;
+                                        });
+
+                                        const accuracy = total > 0 ? Math.round((correctCount / total) * 100) : 0;
+
+                                        return (
+                                            <div className="space-y-8">
+                                                {/* Header Stats */}
+                                                <div className="bg-slate-950 border border-slate-800 rounded-3xl p-8 text-center space-y-6 shadow-2xl">
+                                                    <div className="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center mx-auto"><Icons.Trophy /></div>
+                                                    <div>
+                                                        <h2 className="text-3xl font-bold text-white mb-1">Kết Quả Bài Tập Unit</h2>
+                                                        <p className="text-slate-400 text-sm">{currentSet ? currentSet.title : 'Unit Practice'}</p>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4">
+                                                        <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
+                                                            <p className="text-xs text-slate-500 uppercase font-bold">Tổng số câu</p>
+                                                            <p className="text-2xl font-bold text-white">{total}</p>
+                                                        </div>
+                                                        <div className="bg-emerald-950/30 border border-emerald-500/30 p-4 rounded-2xl">
+                                                            <p className="text-xs text-emerald-400 uppercase font-bold">Số câu đúng</p>
+                                                            <p className="text-2xl font-bold text-emerald-400">{correctCount}</p>
+                                                        </div>
+                                                        <div className="bg-rose-950/30 border border-rose-500/30 p-4 rounded-2xl">
+                                                            <p className="text-xs text-rose-400 uppercase font-bold">Số câu sai</p>
+                                                            <p className="text-2xl font-bold text-rose-400">{wrongCount}</p>
+                                                        </div>
+                                                        <div className="bg-amber-950/30 border border-amber-500/30 p-4 rounded-2xl">
+                                                            <p className="text-xs text-amber-400 uppercase font-bold">Tỷ lệ chính xác</p>
+                                                            <p className="text-2xl font-bold text-amber-400">{accuracy}%</p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex flex-wrap gap-4 justify-center pt-2">
+                                                        <button onClick={openUnitExerciseModal} className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-6 py-3 rounded-xl flex items-center gap-2 shadow-lg"><Icons.Refresh /> Làm lại bài tập</button>
+                                                        <button onClick={() => setCurrentView('set')} className="bg-slate-800 hover:bg-slate-700 text-white font-bold px-6 py-3 rounded-xl flex items-center gap-2 border border-slate-700"><Icons.ArrowLeft /> Quay lại Unit</button>
+                                                    </div>
+                                                </div>
+
+                                                {/* OVERALL AI FEEDBACK SECTION */}
+                                                {unitQuizState.overallFeedback && (
+                                                    <div className="bg-slate-950 border border-amber-500/30 rounded-3xl p-6 md:p-8 space-y-4 shadow-xl">
+                                                        <h3 className="text-xl font-bold text-amber-400 flex items-center gap-2"><Icons.Sparkles /> Nhận Xét Tổng Hợp Từ AI Coach</h3>
+                                                        <p className="text-slate-200 leading-relaxed text-base">{unitQuizState.overallFeedback.overallMsg}</p>
+
+                                                        {unitQuizState.overallFeedback.commonMistakes && unitQuizState.overallFeedback.commonMistakes.length > 0 && (
+                                                            <div className="space-y-1">
+                                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Các lỗi phổ biến cần lưu ý:</p>
+                                                                <div className="flex flex-wrap gap-2">
+                                                                    {unitQuizState.overallFeedback.commonMistakes.map((m, mIdx) => (
+                                                                        <span key={mIdx} className="px-3 py-1 bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded-lg text-xs font-medium">{m}</span>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {unitQuizState.overallFeedback.reviewWords && unitQuizState.overallFeedback.reviewWords.length > 0 && (
+                                                            <div className="space-y-1 pt-2">
+                                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Từ vựng cần ôn lại:</p>
+                                                                <div className="flex flex-wrap gap-2">
+                                                                    {unitQuizState.overallFeedback.reviewWords.map((w, wIdx) => (
+                                                                        <span key={wIdx} className="px-3 py-1 bg-amber-500/10 border border-amber-500/30 text-amber-300 rounded-lg text-xs font-mono font-bold">{w}</span>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                {/* DETAILED QUESTION BREAKDOWN */}
+                                                <div className="space-y-4">
+                                                    <h3 className="text-xl font-bold text-white flex items-center gap-2"><Icons.Card /> Chi Tiết Từng Câu Hỏi ({total})</h3>
+                                                    
+                                                    {unitQuizState.questions.map((q, idx) => {
+                                                        const ev = unitQuizState.aiEvaluations[q.id] || {};
+                                                        const isCorrect = ev.correct;
+
+                                                        return (
+                                                            <div key={q.id} className={`p-6 rounded-2xl border space-y-3 bg-slate-950 ${isCorrect ? 'border-slate-800' : 'border-rose-500/40'}`}>
+                                                                <div className="flex items-center justify-between">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="text-xs font-bold text-slate-400">#Câu {idx + 1}</span>
+                                                                        <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-800 text-amber-400">
+                                                                            {q.type === 'meaning_to_word' ? 'Meaning ➔ Word' : q.type === 'complete_sentence' ? 'Complete Sentence' : 'Make Your Sentence'}
+                                                                        </span>
+                                                                    </div>
+                                                                    <span className={`text-xs font-bold px-3 py-1 rounded-full ${isCorrect ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'}`}>
+                                                                        {isCorrect ? 'Chính xác' : 'Chưa đúng'}
+                                                                    </span>
+                                                                </div>
+
+                                                                <p className="font-bold text-lg text-white">{q.prompt}</p>
+
+                                                                <div className="text-sm space-y-1 bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                                                                    <p><span className="text-slate-400">Câu trả lời của bạn:</span> <span className={isCorrect ? 'text-emerald-400 font-semibold' : 'text-rose-400 font-semibold'}>{ev.userAnswer || '(Trống)'}</span></p>
+                                                                    {!isCorrect && <p><span className="text-slate-400">Gợi ý đáp án chuẩn:</span> <strong className="text-emerald-400">{ev.correctAnswer}</strong></p>}
+                                                                    {ev.correction && <p><span className="text-slate-400">Sửa lỗi/Cấu trúc:</span> <span className="text-amber-300">{ev.correction}</span></p>}
+                                                                </div>
+
+                                                                {ev.explanation && <p className="text-xs text-slate-300 leading-relaxed">{ev.explanation}</p>}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        );
+                                    })()}
+                                </div>
+                            )}
+
+                        </main>
+                    </div>
+
+                    {/* FOLDER MODAL */}
+                    {isFolderModalOpen && (
+                        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+                            <form onSubmit={handleSaveFolder} className="bg-slate-900 border border-slate-700 rounded-3xl p-6 md:p-8 max-w-md w-full space-y-5 shadow-2xl animate-fade-in">
+                                <h3 className="text-xl font-bold text-white">{editingFolder ? 'Edit Folder' : 'Create New Folder'}</h3>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Folder Name</label>
+                                        <input type="text" required value={folderForm.name} onChange={(e) => setFolderForm({ ...folderForm, name: e.target.value })} placeholder="e.g. A1 Vocabulary, Daily Communication..." className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Description</label>
+                                        <textarea value={folderForm.description} onChange={(e) => setFolderForm({ ...folderForm, description: e.target.value })} placeholder="Optional folder description..." className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 h-24 resize-none" />
+                                    </div>
+                                </div>
+                                <div className="flex justify-end gap-3 pt-2">
+                                    <button type="button" onClick={() => setIsFolderModalOpen(false)} className="px-5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 font-semibold text-sm">Cancel</button>
+                                    <button type="submit" className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-sm shadow-lg">Save Folder</button>
+                                </div>
+                            </form>
+                        </div>
+                    )}
+
+                    {/* SET MODAL */}
+                    {isSetModalOpen && (
+                        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+                            <form onSubmit={handleSaveSet} className="bg-slate-900 border border-slate-700 rounded-3xl p-6 md:p-8 max-w-md w-full space-y-5 shadow-2xl animate-fade-in">
+                                <h3 className="text-xl font-bold text-white">{editingSet ? 'Edit Study Set / Unit' : 'Create Study Set / Unit'}</h3>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Folder</label>
+                                        <select value={setForm.folderId} onChange={(e) => setSetForm({ ...setForm, folderId: e.target.value })} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500">
+                                            <option value="">-- Select Folder (Optional) --</option>
+                                            {activeFolders.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Unit / Set Title</label>
+                                        <input type="text" required value={setForm.title} onChange={(e) => setSetForm({ ...setForm, title: e.target.value })} placeholder="e.g. Lesson 1: Food & Restaurant" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Description</label>
+                                        <textarea value={setForm.description} onChange={(e) => setSetForm({ ...setForm, description: e.target.value })} placeholder="Optional description..." className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 h-20 resize-none" />
+                                    </div>
+                                </div>
+                                <div className="flex justify-end gap-3 pt-2">
+                                    <button type="button" onClick={() => setIsSetModalOpen(false)} className="px-5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 font-semibold text-sm">Cancel</button>
+                                    <button type="submit" className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-sm shadow-lg">Save Set</button>
+                                </div>
+                            </form>
+                        </div>
+                    )}
+
+                    {/* CARD MODAL */}
+                    {isCardModalOpen && (
+                        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+                            <form onSubmit={handleSaveCard} className="bg-slate-900 border border-slate-700 rounded-3xl p-6 md:p-8 max-w-lg w-full space-y-4 shadow-2xl animate-fade-in max-h-[90vh] overflow-y-auto">
+                                <h3 className="text-xl font-bold text-white">{editingCard ? 'Edit Word Card' : 'Add New Word Card'}</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">English Word</label>
+                                        <input type="text" required value={cardForm.english} onChange={(e) => setCardForm({ ...cardForm, english: e.target.value })} placeholder="e.g. restaurant" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-amber-500" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Part of Speech</label>
+                                        <select value={cardForm.partOfSpeech} onChange={(e) => setCardForm({ ...cardForm, partOfSpeech: e.target.value })} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-amber-500">
+                                            <option value="noun">noun (n.)</option>
+                                            <option value="verb">verb (v.)</option>
+                                            <option value="adjective">adjective (adj.)</option>
+                                            <option value="adverb">adverb (adv.)</option>
+                                            <option value="preposition">preposition (prep.)</option>
+                                            <option value="conjunction">conjunction (conj.)</option>
+                                            <option value="pronoun">pronoun (pron.)</option>
+                                            <option value="interjection">interjection (interj.)</option>
+                                            <option value="phrase">phrase (phr.)</option>
+                                            <option value="phrasal verb">phrasal verb (phr. v.)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">IPA Pronunciation</label>
+                                        <input type="text" value={cardForm.ipa} onChange={(e) => setCardForm({ ...cardForm, ipa: e.target.value })} placeholder="e.g. /ˈres.tə.rɑːnt/" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-amber-500 font-mono text-sm" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Vietnamese Meaning</label>
+                                        <input type="text" required value={cardForm.vietnamese} onChange={(e) => setCardForm({ ...cardForm, vietnamese: e.target.value })} placeholder="e.g. nhà hàng" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-amber-500" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Example Sentence</label>
+                                    <input type="text" value={cardForm.example} onChange={(e) => setCardForm({ ...cardForm, example: e.target.value })} placeholder="e.g. We had dinner at a small restaurant." className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-amber-500" />
+                                </div>
+                                <div className="flex justify-end gap-3 pt-3">
+                                    <button type="button" onClick={() => setIsCardModalOpen(false)} className="px-5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 font-semibold text-sm">Cancel</button>
+                                    <button type="submit" className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-sm shadow-lg">Save Card</button>
+                                </div>
+                            </form>
+                        </div>
+                    )}
+
+                    {/* QUICK AI IMPORT MODAL */}
+                    {isAiImportModalOpen && (
+                        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+                            <div className="bg-slate-900 border border-slate-700 rounded-3xl p-6 md:p-8 max-w-2xl w-full space-y-5 shadow-2xl animate-fade-in max-h-[90vh] overflow-y-auto">
+                                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                                    <h3 className="text-xl font-bold text-white flex items-center gap-2"><Icons.Sparkles /> Nhập Từ Vựng Bằng AI</h3>
+                                    <button onClick={() => setIsAiImportModalOpen(false)} className="text-slate-400 hover:text-white p-1"><Icons.Cross /></button>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Chọn Unit / Học phần đích</label>
+                                        <select value={targetImportSetId} onChange={(e) => setTargetImportSetId(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500">
+                                            {activeSets.length === 0 ? <option value="">-- Chưa có Unit nào --</option> : activeSets.map(s => <option key={s.id} value={s.id}>{s.title}</option>)}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Danh sách từ tiếng Anh (Mỗi từ 1 dòng hoặc cách nhau bởi dấu phẩy)</label>
+                                        <textarea value={importRawText} onChange={(e) => setImportRawText(e.target.value)} placeholder="restaurant, reservation, crowded, delicious, environment..." className="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 h-32 resize-none font-mono text-sm" />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Ghi chú ngữ cảnh thêm cho AI (Tùy chọn)</label>
+                                        <input type="text" value={customPromptNote} onChange={(e) => setCustomPromptNote(e.target.value)} placeholder="Ví dụ: Chủ đề từ vựng du lịch khách sạn..." className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-amber-500 text-sm" />
+                                    </div>
+
+                                    <button disabled={isAiImporting || !importRawText.trim()} onClick={handleRunAiImport} className="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold rounded-xl transition-all shadow-lg flex items-center justify-center gap-2">
+                                        {isAiImporting ? <><div className="w-5 h-5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin"></div> AI đang phân tích & tạo thẻ...</> : <><Icons.Sparkles /> Bắt đầu tạo Flashcard</>}
+                                    </button>
+
+                                    {aiImportError && <p className="text-xs text-rose-400 bg-rose-950/40 border border-rose-500/30 p-3 rounded-xl">{aiImportError}</p>}
+
+                                    {/* PREVIEW GENERATED CARDS */}
+                                    {aiPreviewCards.length > 0 && (
+                                        <div className="space-y-3 pt-2">
+                                            <h4 className="font-bold text-sm text-emerald-400 flex items-center gap-2"><Icons.Check /> Xem trước {aiPreviewCards.length} từ đã tạo:</h4>
+                                            <div className="max-h-48 overflow-y-auto space-y-2 border border-slate-800 p-2 rounded-xl bg-slate-950">
+                                                {aiPreviewCards.map((item, idx) => (
+                                                    <div key={idx} className="p-2.5 bg-slate-900 rounded-lg text-xs flex items-center justify-between">
+                                                        <div>
+                                                            <span className="font-bold text-white">{item.word}</span> <span className="text-amber-400 font-mono">({getPosAbbreviation(item.partOfSpeech)})</span> <span className="text-slate-400 font-mono">{item.ipa}</span>
+                                                            <p className="text-emerald-400 font-semibold mt-0.5">{item.meaning}</p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <button onClick={handleSaveAiImportedCards} className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg transition-all">Lưu tất cả vào Unit</button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* UNIT EXERCISE CONFIG MODAL */}
+                    {isUnitExerciseModalOpen && (
+                        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+                            <div className="bg-slate-900 border border-slate-700 rounded-3xl p-6 md:p-8 max-w-md w-full space-y-5 shadow-2xl animate-fade-in">
+                                <h3 className="text-xl font-bold text-white flex items-center gap-2"><Icons.Quiz /> Tùy Chỉnh Bài Tập AI</h3>
+                                
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Loại Dạng Bài Tập</label>
+                                        <select value={exerciseConfig.exerciseType} onChange={(e) => setExerciseConfig({ ...exerciseConfig, exerciseType: e.target.value })} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500">
+                                            <option value="all">Tất cả các dạng (Đa dạng)</option>
+                                            <option value="meaning_to_word">Đoán từ qua Định nghĩa / Nghĩa</option>
+                                            <option value="complete_sentence">Điền từ thích hợp vào câu</option>
+                                            <option value="make_sentence">Đặt câu tiếng Anh hoàn chỉnh</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Hình Thức Trả Lời</label>
+                                        <select value={exerciseConfig.answerFormat} onChange={(e) => setExerciseConfig({ ...exerciseConfig, answerFormat: e.target.value })} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500">
+                                            <option value="written">Tự luận / Tự gõ từ & đặt câu (AI Chấm)</option>
+                                            <option value="multiple_choice">Trắc nghiệm Choose 1 of 4</option>
+                                            <option value="mixed">Xen kẽ Cả hai hình thức</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Số lượng câu hỏi</label>
+                                        <input type="number" min="1" max="20" value={exerciseConfig.questionCount} onChange={(e) => setExerciseConfig({ ...exerciseConfig, questionCount: parseInt(e.target.value) || 5 })} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500" />
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end gap-3 pt-2">
+                                    <button type="button" onClick={() => setIsUnitExerciseModalOpen(false)} className="px-5 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 font-semibold text-sm">Hủy</button>
+                                    <button type="button" onClick={startUnitExercise} className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-sm shadow-lg flex items-center gap-2"><Icons.Quiz /> Bắt Đầu Làm Bài</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* API KEY MODAL */}
+                    {isApiKeyModalOpen && (
+                        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+                            <div className="bg-slate-900 border border-slate-700 rounded-3xl p-6 md:p-8 max-w-md w-full space-y-5 shadow-2xl animate-fade-in">
+                                <h3 className="text-xl font-bold text-amber-400 flex items-center gap-2"><Icons.Key /> Gemini API Key Settings</h3>
+                                <p className="text-xs text-slate-400 leading-relaxed">Nhập Gemini API Key của bạn để sử dụng các tính năng AI Import từ vựng và Chấm bài tập AI tự động.</p>
+                                <input type="password" value={userApiKey} onChange={(e) => setUserApiKey(e.target.value)} placeholder="AIzaSy..." className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 font-mono text-sm" />
+                                <div className="flex justify-end gap-3">
+                                    <button onClick={() => setIsApiKeyModalOpen(false)} className="px-4 py-2 text-slate-400 hover:text-white text-sm">Cancel</button>
+                                    <button onClick={() => saveApiKey(userApiKey)} className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-sm shadow-lg">Save API Key</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* CONFIRM DIALOG */}
+                    {confirmDialog.isOpen && (
+                        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+                            <div className="bg-slate-900 border border-slate-700 rounded-3xl p-6 max-w-sm w-full space-y-4 text-center shadow-2xl animate-fade-in">
+                                <p className="text-slate-200 font-medium text-base">{confirmDialog.message}</p>
+                                <div className="flex justify-center gap-3 pt-2">
+                                    <button onClick={() => setConfirmDialog({ isOpen: false, message: '', onConfirm: null })} className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl font-medium text-sm hover:bg-slate-700">Hủy</button>
+                                    <button onClick={confirmDialog.onConfirm} className="px-5 py-2 bg-rose-600 text-white rounded-xl font-bold text-sm hover:bg-rose-500 shadow-lg">Xác nhận</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>
